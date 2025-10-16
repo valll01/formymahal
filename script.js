@@ -33,32 +33,49 @@ function initTypewriterAnimations() {
     const aboutTextSection = document.querySelector('.about-text');
     const paragraphs = aboutTextSection.querySelectorAll('p');
     const heading = aboutTextSection.querySelector('h3');
-    
-    // Store original text
-    const originalTexts = [];
-    paragraphs.forEach(p => originalTexts.push(p.innerHTML));
-    
+
+    // Store original texts
+    const originalHeading = heading.innerHTML;
+    const originalParagraphs = Array.from(paragraphs).map(p => p.innerHTML);
+
     // Clear all text initially
     heading.innerHTML = '';
     paragraphs.forEach(p => p.innerHTML = '');
-    
-    // Start typing animations with delays
-    setTimeout(() => {
-        typeWriter(heading, 'Happy Birthday Mahal', 50, () => {
-            setTimeout(() => {
-                typeWriter(paragraphs[0], originalTexts[0], 20, () => {
-                    setTimeout(() => {
-                        typeWriter(paragraphs[1], originalTexts[1], 20, () => {
-                            setTimeout(() => {
-                                typeWriter(paragraphs[2], originalTexts[2], 20);
-                            }, 500);
-                        });
-                    }, 500);
-                });
-            }, 1000);
-        });
-    }, 1000);
+
+    // Type heading first
+    typeWriter(heading, originalHeading, 50, () => {
+        // After heading is done, type each paragraph one by one
+        typeParagraphsSequentially(paragraphs, originalParagraphs, 0);
+    });
 }
+
+// Helper function to type paragraphs sequentially
+function typeParagraphsSequentially(paragraphs, texts, index) {
+    if (index >= paragraphs.length) return; // Done
+
+    typeWriter(paragraphs[index], texts[index], 20, () => {
+        setTimeout(() => {
+            typeParagraphsSequentially(paragraphs, texts, index + 1);
+        }, 500); // Delay before next paragraph starts
+    });
+}
+
+// Simple typewriter effect
+function typeWriter(element, text, speed, callback) {
+    element.innerHTML = '';
+    let i = 0;
+    function typing() {
+        if (i < text.length) {
+            element.innerHTML += text.charAt(i);
+            i++;
+            setTimeout(typing, speed);
+        } else if (callback) {
+            callback();
+        }
+    }
+    typing();
+}
+
 
 // Game functionality
 document.addEventListener('DOMContentLoaded', function() {
@@ -315,40 +332,38 @@ function startMessengerConversation() {
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
     
-    // Add image message
-    function addImageMessage(caption, sender, time = null, imageUrl) {
-        if (!time) {
-            const now = new Date();
-            time = now.getHours() + ':' + (now.getMinutes() < 10 ? '0' : '') + now.getMinutes();
-        }
-        
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `message ${sender}`;
-        messageDiv.innerHTML = `
-            <div class="image-message" data-image="${imageUrl}" data-caption="${caption}">
-                <div style="width:200px;height:150px;background:linear-gradient(135deg,#6e48aa,#9d50bb);display:flex;align-items:center;justify-content:center;color:white;font-size:14px;position:relative;">
-                    <div style="width:100%;height:100%;background:#333;display:flex;align-items:center;justify-content:center;">
-                        <i class="fas fa-image" style="font-size:24px;"></i>
+// Add image message
+            function addImageMessage(caption, sender, time = null, imageUrl) {
+                if (!time) {
+                    const now = new Date();
+                    time = now.getHours() + ':' + (now.getMinutes() < 10 ? '0' : '') + now.getMinutes();
+                }
+                
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${sender}`;
+                messageDiv.innerHTML = `
+                    <div class="image-message" data-image="${imageUrl}" data-caption="${caption}">
+                        <div style="width:200px;height:150px;background:linear-gradient(135deg,#6e48aa,#9d50bb);display:flex;align-items:center;justify-content:center;color:white;font-size:14px;position:relative;">
+                            <img src="${imageUrl}" alt="${caption}" style="width:100%;height:100%;object-fit:cover;">
+                            <div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.7);color:white;padding:2px 6px;border-radius:10px;font-size:10px;">
+                                <i class="fas fa-expand"></i>
+                            </div>
+                        </div>
+                        <div class="image-caption">${caption}</div>
+                        <div class="message-time">${time}</div>
                     </div>
-                    <div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.7);color:white;padding:2px 6px;border-radius:10px;font-size:10px;">
-                        <i class="fas fa-expand"></i>
-                    </div>
-                </div>
-                <div class="image-caption">${caption}</div>
-                <div class="message-time">${time}</div>
-            </div>
-        `;
-        chatMessages.appendChild(messageDiv);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-        
-        // Add click event to image message
-        const imageMessage = messageDiv.querySelector('.image-message');
-        imageMessage.addEventListener('click', function() {
-            openImageModal(this.dataset.image, this.dataset.caption);
-        });
-    }
-    
-    // Open image modal
+                `;
+                chatMessages.appendChild(messageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                
+                // Add click event to image message
+                const imageMessage = messageDiv.querySelector('.image-message');
+                imageMessage.addEventListener('click', function() {
+                    openImageModal(this.dataset.image, this.dataset.caption);
+                });
+            }
+
+
     function openImageModal(imageUrl, caption) {
         modalImage.src = imageUrl;
         imageDescription.textContent = caption;
@@ -356,13 +371,12 @@ function startMessengerConversation() {
         document.body.style.overflow = 'hidden';
     }
     
-    // Close image modal
+  
     function closeImageModal() {
         imageModal.classList.remove('active');
         document.body.style.overflow = 'auto';
     }
-    
-    // Event listeners for modal
+
     closeModal.addEventListener('click', closeImageModal);
     imageModal.addEventListener('click', function(e) {
         if (e.target === imageModal) {
@@ -370,19 +384,18 @@ function startMessengerConversation() {
         }
     });
     
-    // Close modal with Escape key
+
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape' && imageModal.classList.contains('active')) {
             closeImageModal();
         }
     });
-    
-    // Send message function
+
     function sendMessage() {
         const text = messageInput.value.trim();
         if (text === '') return;
         
-        // Add user message
+   
         addMessage(text, 'sent');
         messageInput.value = '';
         
@@ -391,11 +404,6 @@ function startMessengerConversation() {
             showTypingIndicator('received', () => {
                 const responses = [
                     "Hala seryoso ba yan? 😳",
-                    "Grabe naman! 😍",
-                    "Hahaha ang landi mo! 😂",
-                    "Sige na, usap tayo! 💬",
-                    "Kilig much! 🥰",
-                    "Ayieeeee! 🤭"
                 ];
                 const randomResponse = responses[Math.floor(Math.random() * responses.length)];
                 addMessage(randomResponse, 'received');
